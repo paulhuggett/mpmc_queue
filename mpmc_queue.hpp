@@ -65,7 +65,7 @@ namespace rigtorp {
             void deallocate (T * p, std::size_t);
         };
 
-#ifdef _WIN32
+#    ifdef _WIN32
         // allocate
         // ~~~~~~~~
         template <typename T>
@@ -86,7 +86,7 @@ namespace rigtorp {
         inline void aligned_allocator<T>::deallocate (T * const p, std::size_t) {
             ::_aligned_free (p);
         }
-#else
+#    else
         // allocate
         // ~~~~~~~~
         template <typename T>
@@ -95,7 +95,8 @@ namespace rigtorp {
                 throw std::bad_array_new_length ();
             }
             T * p = nullptr;
-            if (::posix_memalign (reinterpret_cast<void **> (&p), alignof (T), sizeof (T) * n) != 0) {
+            if (::posix_memalign (reinterpret_cast<void **> (&p), alignof (T), sizeof (T) * n) !=
+                0) {
                 throw std::bad_alloc ();
             }
             return p;
@@ -107,7 +108,7 @@ namespace rigtorp {
         inline void aligned_allocator<T>::deallocate (T * const p, std::size_t) {
             std::free (p);
         }
-#endif // !_WIN32
+#    endif // !_WIN32
 
 #endif //__cpp_aligned_new
 
@@ -127,7 +128,8 @@ namespace rigtorp {
 
             template <typename... Args>
             void construct (Args &&... args) noexcept {
-                static_assert (std::is_nothrow_constructible_v<T, Args &&...>, "T must be nothrow constructible with Args&&...");
+                static_assert (std::is_nothrow_constructible_v<T, Args &&...>,
+                               "T must be nothrow constructible with Args&&...");
                 new (&storage) T (std::forward<Args> (args)...);
             }
 
@@ -150,13 +152,15 @@ namespace rigtorp {
         //*    |_|                   *
         template <typename T, typename Allocator = aligned_allocator<slot<T>>>
         class queue {
-            static_assert (std::is_nothrow_copy_assignable_v<T> || std::is_nothrow_move_assignable_v<T>, "T must be nothrow copy or move assignable");
+            static_assert (std::is_nothrow_copy_assignable_v<T> ||
+                               std::is_nothrow_move_assignable_v<T>,
+                           "T must be nothrow copy or move assignable");
             static_assert (std::is_nothrow_destructible_v<T>, "T must be nothrow destructible");
 
         public:
             explicit queue (std::size_t capacity, Allocator const & allocator = Allocator ());
             queue (queue const &) = delete;
-            queue (queue && ) noexcept = delete;
+            queue (queue &&) noexcept = delete;
 
             ~queue () noexcept = default;
 
@@ -174,13 +178,15 @@ namespace rigtorp {
 
             /// Enqueue an item using copy construction. Blocks if the queue is full.
             void push (T const & v) noexcept {
-                static_assert (std::is_nothrow_copy_constructible_v<T>, "T must be nothrow copy constructible");
+                static_assert (std::is_nothrow_copy_constructible_v<T>,
+                               "T must be nothrow copy constructible");
                 emplace (v);
             }
 
             /// Enqueue an item using move construction. Participates in overload resolution only
             /// if type P is nothrow constructible. Blocks if the queue is full.
-            template <typename P, typename = typename std::enable_if_t<std::is_nothrow_constructible_v<T, P &&>>>
+            template <typename P, typename = typename std::enable_if_t<
+                                      std::is_nothrow_constructible_v<T, P &&>>>
             void push (P && v) noexcept {
                 emplace (std::forward<P> (v));
             }
@@ -188,13 +194,16 @@ namespace rigtorp {
             /// Try to enqueue an item using copy construction.
             /// \returns True on success and false if the queue is full.
             bool try_push (T const & v) noexcept {
-                static_assert (std::is_nothrow_copy_constructible_v<T>, "T must be nothrow copy constructible");
+                static_assert (std::is_nothrow_copy_constructible_v<T>,
+                               "T must be nothrow copy constructible");
                 return try_emplace (v);
             }
 
-            /// Try to enqueue an item using move construction. Participates in overload resolution only if type P is nothrow constructible.
-            /// \returns true on success, false if the queue is full.
-            template <typename P, typename = typename std::enable_if_t<std::is_nothrow_constructible_v<T, P &&>>>
+            /// Try to enqueue an item using move construction. Participates in overload resolution
+            /// only if type P is nothrow constructible. \returns true on success, false if the
+            /// queue is full.
+            template <typename P, typename = typename std::enable_if_t<
+                                      std::is_nothrow_constructible_v<T, P &&>>>
             bool try_push (P && v) noexcept {
                 return try_emplace (std::forward<P> (v));
             }
@@ -225,9 +234,8 @@ namespace rigtorp {
             if (capacity_ < 1U) {
                 throw std::invalid_argument ("capacity < 1");
             }
-            static_assert (
-                alignof (slot<T>) == hardware_interference_size,
-                "Slot must be aligned to cache line boundary to prevent false sharing");
+            static_assert (alignof (slot<T>) == hardware_interference_size,
+                           "Slot must be aligned to cache line boundary to prevent false sharing");
             static_assert (sizeof (slot<T>) % hardware_interference_size == 0,
                            "Slot size must be a multiple of cache line size to prevent false "
                            "sharing between adjacent slots");
