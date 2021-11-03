@@ -15,7 +15,10 @@ set(gcc_warnings
     -Wextra
     -pedantic
 )
-set(msvc_warnings /W4)
+set(msvc_warnings
+    /W4
+    /wd4324
+)
 
 include (FindThreads)
 

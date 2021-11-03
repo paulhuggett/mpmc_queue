@@ -70,7 +70,14 @@ struct TestType {
     char data[129];
 };
 
-std::set<const TestType *> TestType::constructed;
+std::set<TestType const *> TestType::constructed;
+
+// Work around a bug in cl.exe which does not implicitly capture constexpr values.
+#ifdef _MSC_VER
+#    define CAPTURE_BUG(...) __VA_ARGS__
+#else
+#    define CAPTURE_BUG(...)
+#endif
 
 int main () {
     using namespace rigtorp;
@@ -163,7 +170,7 @@ int main () {
         std::atomic<unsigned long long> sum = 0ULL;
         for (auto i = 0U; i < num_threads; ++i) {
             threads.emplace_back (
-                [&q, &flag] (unsigned const tctr) {
+                [&q, &flag, CAPTURE_BUG (num_ops, num_threads)] (unsigned const tctr) {
                     while (!flag) {
                     }
                     for (unsigned long long j = tctr; j < num_ops; j += num_threads) {
@@ -175,7 +182,7 @@ int main () {
 
         for (auto i = 0U; i < num_threads; ++i) {
             threads.emplace_back (
-                [&q, &flag, &sum] (unsigned const tctr) {
+                [&q, &flag, &sum, CAPTURE_BUG (num_ops, num_threads)] (unsigned const tctr) {
                     while (!flag) {
                     }
                     auto thread_sum = 0ULL;
